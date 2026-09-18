@@ -81,7 +81,7 @@ public class SecurityConfig {
                         "/api/**"
                     )
                     .hasAuthority(
-                        "SCOPE_access_as_user"
+                        "SCOPE_acceso_as_user"
                     )
 
 
