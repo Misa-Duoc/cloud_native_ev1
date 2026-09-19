@@ -1,4 +1,3 @@
-import logo from './logo.svg';
 import './App.css';
 import { AuthenticatedTemplate, UnauthenticatedTemplate, useMsal } from '@azure/msal-react';
 import { loginRequest, apiRequest } from './authConfig';
@@ -8,20 +7,23 @@ import Axios from 'axios';
 
 function App() {
 
+  // Estados de la consulta backend
   const { instance, accounts } = useMsal();
   const [usuarioBackend, setUsuarioBackend] = useState(null);
   const [errorBackend, setErrorBackend] = useState(null);
-  {/* Agregado */ }
+  // Agregado
   const [cargando, setCargando] = useState(false);
-  {/* Agregado */ }
+
+  //Estados del formulario
+  // Agregado
   const [titulo, setTitulo] = useState("");
-  {/* Agregado */ }
+  // Agregado
   const [descripcion, setDescripcion] = useState("");
-  {/* Agregado */ }
+  // Agregado
   const [prioridad, setPrioridad] = useState("");
-  {/* Agregado */ }
+  // Agregado
   const [errorSolicitud, setErrorSolicitud] = useState("");
-  {/* Agregado , mostraremos el resumen en la pagina*/ }
+  // Agregado , mostraremos el resumen en la pagina
   const [solicitudRevisada, setSolicitudRevisada] = useState(null);
 
 
@@ -105,7 +107,7 @@ function App() {
 
   const revisarSolicitud = () => {
     setErrorSolicitud("");
-    setSolicitudRevisada(null); {/* con este setteo, limpiaremos la revisión anterior */ }
+    setSolicitudRevisada(null); // con este setteo, limpiaremos la revisión anterior
 
     if (
       titulo.trim() === "" ||
@@ -123,6 +125,14 @@ function App() {
       descripcion: descripcion.trim(),
       prioridad
     });
+  };
+
+  const limpiarFormulario = () => {
+    setTitulo("");
+    setDescripcion("");
+    setPrioridad("");
+    setErrorSolicitud("");
+    setSolicitudRevisada(null);
   };
 
   return (
@@ -281,6 +291,15 @@ function App() {
             onClick={revisarSolicitud}
           >
             Revisar solicitud
+          </button>
+
+          {/* btn: estilo de botón; btn-secondary: color secundario */}
+          <button
+            type="button"
+            className="btn btn-secondary mt-3"
+            onClick={limpiarFormulario}
+          >
+            Limpiar formulario
           </button>
 
           {/* alert: recuadro de aviso, alert-info: color informativo, mt-3: margen superior*/}
