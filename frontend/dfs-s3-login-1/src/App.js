@@ -26,6 +26,11 @@ function App() {
   // Agregado , mostraremos el resumen en la pagina
   const [solicitudRevisada, setSolicitudRevisada] = useState(null);
 
+  // Agregados funcionales con la api
+  const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
+  const [solicitudCreada, setSolicitudCreada] = useState(null);
+  const [solicitudes, setSolicitudes] = useState([]);
+
 
   const iniciarSesion = () => {
     instance.loginRedirect(loginRequest)
@@ -43,32 +48,6 @@ function App() {
       return;
     }
 
-    {/*
-    const obtenerUsuarioBackend = async () => {
-      try {
-        // solicitar a Entra ID un access token
-        const tokenResponse = await instance.acquireTokenSilent({ ...apiRequest, account: accounts[0] });
-        const accessToken = tokenResponse.accessToken;
-        console.log(accessToken);
-
-        // consumir servicio ahora que tenemos access token
-        Axios.get("http://localhost:8080/api/usuario", { headers: { Authorization: `Bearer ${accessToken}` } })
-          .then((response) => {
-            console.log(response.data);
-            setUsuarioBackend(response.data);
-          })
-          .catch(
-            (error) => {
-              console.log(error);
-              setErrorBackend("Error consultando api");
-            }
-          )
-      } catch (error) {
-        console.log("Error obteniendo datos", error);
-        setErrorBackend("No fue posible obtener el access token");
-      }
-    }
-    */}
 
     const obtenerUsuarioBackend = async () => {
       setCargando(true);
@@ -81,16 +60,27 @@ function App() {
           account: accounts[0]
         });
 
-        const respuesta = await Axios.get(
-          "http://localhost:8080/api/usuario",
-          {
-            headers: {
-              Authorization: `Bearer ${respuestaToken.accessToken}`
-            }
+        // Reemplazo de respuesta
+        const configuracion = {
+          headers: {
+            Authorization: `Bearer ${respuestaToken.accessToken}`
           }
-        );
+        };
 
-        setUsuarioBackend(respuesta.data);
+        const [respuestaUsuario, respuestaSolicitudes] = await Promise.all([
+          Axios.get(
+            `${process.env.REACT_APP_API_BASE_URL}/v2/usuario`,
+            configuracion
+          ),
+          Axios.get(
+            `${process.env.REACT_APP_API_BASE_URL}/v2/solicitudes/mias`,
+            configuracion
+          )
+        ]);
+
+        setUsuarioBackend(respuestaUsuario.data);
+        setSolicitudes(respuestaSolicitudes.data);
+        
       } catch (error) {
         console.error(error);
         setErrorBackend(
@@ -104,7 +94,7 @@ function App() {
     obtenerUsuarioBackend();
   }, [accounts, instance]);
 
-
+  //
   const revisarSolicitud = () => {
     setErrorSolicitud("");
     setSolicitudRevisada(null); // con este setteo, limpiaremos la revisión anterior
@@ -125,6 +115,49 @@ function App() {
       descripcion: descripcion.trim(),
       prioridad
     });
+  };
+
+  //Funcion asincrona para enviar la solicitud
+  const enviarSolicitud = async () => {
+    if (!solicitudRevisada || accounts.length === 0) {
+      return;
+    }
+
+    setEnviandoSolicitud(true);
+    setErrorSolicitud("");
+
+    try {
+      const respuestaToken = await instance.acquireTokenSilent({
+        ...apiRequest,
+        account: accounts[0]
+      });
+
+      const respuesta = await Axios.post(
+        `${process.env.REACT_APP_API_BASE_URL}/v2/solicitudes`,
+        solicitudRevisada,
+        {
+          headers: {
+            Authorization: `Bearer ${respuestaToken.accessToken}`,
+            "Content-Type": "application/json"
+          }
+        }
+      );
+
+      setSolicitudCreada(respuesta.data);
+      setSolicitudes((solicitudesAnteriores) => [
+        respuesta.data,
+        ...solicitudesAnteriores
+      ]);
+      setSolicitudRevisada(null);
+      setTitulo("");
+      setDescripcion("");
+      setPrioridad("");
+    } catch (error) {
+      console.error(error);
+      setErrorSolicitud("No fue posible crear la solicitud.");
+    } finally {
+      setEnviandoSolicitud(false);
+    }
   };
 
   const limpiarFormulario = () => {
@@ -207,6 +240,7 @@ function App() {
 
         {/*Recuerden que el mb es margin bottom , y mt es margin top (Margen de arriba o abajo) */}
 
+        {/* ---------- TARJETA PARA NUEVA SOLICITUD ---------- */}
         <div className="card p-3 mb-3"> {/* Div para el recuadro de solicitud */}
           <h2>Nueva solicitud</h2>
 
@@ -310,11 +344,63 @@ function App() {
               <p>Descripción: {solicitudRevisada.descripcion}</p>
               <p>Prioridad: {solicitudRevisada.prioridad}</p>
               <p>Vista previa. La solicitud todavía no se ha enviado.</p>
+              <button
+                type="button"
+                className="btn btn-success"
+                onClick={enviarSolicitud}
+                disabled={enviandoSolicitud}
+              >
+                {enviandoSolicitud ? "Enviando..." : "Enviar solicitud"}
+              </button>
+            </div>
+          )}
+          {solicitudCreada && (
+            <div className="alert alert-success mt-3">
+              <h3>Solicitud creada correctamente</h3>
+              <p>ID: {solicitudCreada.id}</p>
+              <p>Título: {solicitudCreada.titulo}</p>
+              <p>Estado: {solicitudCreada.estado}</p>
             </div>
           )}
 
         </div>
 
+          {/* ---------- TARJETA PARA VER MIS SOLICITUDES ---------- */}
+        <div className="card p-3 mb-3">
+          <h2>Mis solicitudes</h2>
+
+          {solicitudes.length === 0 ? (
+            <p>No tienes solicitudes registradas.</p>
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-striped">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Título</th>
+                    <th>Prioridad</th>
+                    <th>Estado</th>
+                    <th>Fecha</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {solicitudes.map((solicitud) => (
+                    <tr key={solicitud.id}>
+                      <td>{solicitud.id}</td>
+                      <td>{solicitud.titulo}</td>
+                      <td>{solicitud.prioridad}</td>
+                      <td>{solicitud.estado}</td>
+                      <td>
+                        {solicitud.fechaCreacion?.replace("T", " ")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
 
         <button onClick={cerrarSesion} className="btn btn-danger">
           Cerrar sesión
