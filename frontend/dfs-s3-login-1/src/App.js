@@ -80,7 +80,7 @@ function App() {
 
         setUsuarioBackend(respuestaUsuario.data);
         setSolicitudes(respuestaSolicitudes.data);
-        
+
       } catch (error) {
         console.error(error);
         setErrorBackend(
@@ -229,6 +229,7 @@ function App() {
             <p>{usuarioBackend.mensaje}</p>
             <p>Nombre: {usuarioBackend.nombre}</p>
             <p>Usuario: {usuarioBackend.usuario}</p>
+            <p>Roles: {usuarioBackend.roles?.join(", ") || "Sin rol asignado"}</p> {/* ? ejecuta joins solo si existen roles*/}
           </div>
         )}
 

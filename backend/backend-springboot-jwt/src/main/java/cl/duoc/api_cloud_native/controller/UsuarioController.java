@@ -23,6 +23,7 @@ public class UsuarioController {
         respuesta.put("usuario", jwt.getClaimAsString("preferred_username"));
         respuesta.put("oid", jwt.getClaimAsString("oid"));
         respuesta.put("scopes", jwt.getClaimAsString("scp"));
+        respuesta.put("roles", jwt.getClaimAsStringList("roles"));
         respuesta.put("audience", jwt.getAudience());
 
         return respuesta;
