@@ -19,6 +19,6 @@ export const loginRequest = {
 
 export const apiRequest = {
     scopes: [
-        "api://c639b2a3-10c3-4611-b3c8-8acb71c2afc6/access_as_user"
+        "api://3cbc0426-09ed-4e59-b1ff-60981daa8762/acceso_as_user"
     ]
 };
