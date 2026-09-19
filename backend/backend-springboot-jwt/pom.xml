@@ -12,6 +12,8 @@
 		<relativePath/>
 	</parent>
 
+	
+
 	<groupId>cl.duoc</groupId>
 	<artifactId>api-cloud-native</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
@@ -38,6 +40,12 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc</artifactId>
+		</dependency>
+
+		<!-- Cliente HTTP para comunicarse con los microservicios -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-restclient</artifactId>
 		</dependency>
 
 		<!-- Herramientas para pruebas de OAuth2 -->
