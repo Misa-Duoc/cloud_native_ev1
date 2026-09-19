@@ -1,0 +1,98 @@
+package cl.duoc.mesatech.solicitudes.model;
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "solicitudes")
+public class Solicitud {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 150)
+    private String titulo;
+
+    @Column(nullable = false, length = 2000)
+    private String descripcion;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private PrioridadSolicitud prioridad;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private EstadoSolicitud estado;
+
+    @Column(nullable = false, length = 150)
+    private String usuario;
+
+    @Column(name = "fecha_creacion", nullable = false, updatable = false)
+    private LocalDateTime fechaCreacion;
+
+    public Solicitud() {
+    }
+
+    @PrePersist
+    public void prepararAntesDeGuardar() {
+        if (estado == null) {
+            estado = EstadoSolicitud.PENDIENTE;
+        }
+
+        if (fechaCreacion == null) {
+            fechaCreacion = LocalDateTime.now();
+        }
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getTitulo() {
+        return titulo;
+    }
+
+    public void setTitulo(String titulo) {
+        this.titulo = titulo;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
+    }
+
+    public PrioridadSolicitud getPrioridad() {
+        return prioridad;
+    }
+
+    public void setPrioridad(PrioridadSolicitud prioridad) {
+        this.prioridad = prioridad;
+    }
+
+    public EstadoSolicitud getEstado() {
+        return estado;
+    }
+
+    public void setEstado(EstadoSolicitud estado) {
+        this.estado = estado;
+    }
+
+    public String getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(String usuario) {
+        this.usuario = usuario;
+    }
+
+    public LocalDateTime getFechaCreacion() {
+        return fechaCreacion;
+    }
+}
