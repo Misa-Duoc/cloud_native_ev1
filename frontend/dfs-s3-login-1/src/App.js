@@ -377,7 +377,7 @@ function App() {
           {/* btn: estilo de botón, btn-primary: color principal (Los colores estan en bootstrap) */}
           <button
             type="button"
-            className="btn btn-primary"
+            className="btn btn-primary mt-3"
             onClick={revisarSolicitud}
           >
             Revisar solicitud
@@ -450,6 +450,7 @@ function App() {
                   <tr>
                     <th>ID</th>
                     <th>Título</th>
+                    {esGestorSolicitudes && <th>Usuario</th>}
                     <th>Prioridad</th>
                     <th>Estado</th>
                     <th>Fecha</th>
@@ -461,6 +462,9 @@ function App() {
                     <tr key={solicitud.id}>
                       <td>{solicitud.id}</td>
                       <td>{solicitud.titulo}</td>
+                      {esGestorSolicitudes && (
+                        <td>{solicitud.usuario}</td>
+                      )}
                       <td>{solicitud.prioridad}</td>
                       <td>
                         {esGestorSolicitudes ? (
