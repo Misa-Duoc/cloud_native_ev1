@@ -18,6 +18,13 @@ public class CrearSolicitudPeticion {
     @NotNull(message = "La prioridad es obligatoria.")
     private PrioridadSolicitud prioridad;
 
+    @NotNull(message = "La categoría es obligatoria.")
+    private Long categoriaId;
+
+    @NotBlank(message = "El nombre de la categoría es obligatorio.")
+    @Size(max = 150, message = "El nombre de la categoría no puede superar los 150 caracteres.")
+    private String categoriaNombre;
+
     public CrearSolicitudPeticion() {
     }
 
@@ -43,5 +50,21 @@ public class CrearSolicitudPeticion {
 
     public void setPrioridad(PrioridadSolicitud prioridad) {
         this.prioridad = prioridad;
+    }
+
+    public Long getCategoriaId() {
+        return categoriaId;
+    }
+
+    public void setCategoriaId(Long categoriaId) {
+        this.categoriaId = categoriaId;
+    }
+
+    public String getCategoriaNombre() {
+        return categoriaNombre;
+    }
+
+    public void setCategoriaNombre(String categoriaNombre) {
+        this.categoriaNombre = categoriaNombre;
     }
 }

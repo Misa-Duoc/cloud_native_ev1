@@ -31,6 +31,11 @@ function App() {
   const [solicitudCreada, setSolicitudCreada] = useState(null);
   const [solicitudes, setSolicitudes] = useState([]);
 
+  // Estados del catálogo
+  const [categorias, setCategorias] = useState([]);
+  const [categoriaId, setCategoriaId] = useState("");
+  const [errorCatalogo, setErrorCatalogo] = useState("");
+
   // Agregados para actualizar mediante patch
   const [solicitudActualizandoId, setSolicitudActualizandoId] = useState(null);
   const [mensajeEstado, setMensajeEstado] = useState("");
@@ -65,6 +70,7 @@ function App() {
       setCargando(true);
       setErrorBackend(null);
       setUsuarioBackend(null);
+      setErrorCatalogo("");
 
       try {
         const respuestaToken = await instance.acquireTokenSilent({
@@ -100,6 +106,20 @@ function App() {
 
         setUsuarioBackend(respuestaUsuario.data);
         setSolicitudes(respuestaSolicitudes.data);
+        try {
+          const respuestaCatalogo = await Axios.get(
+            `${process.env.REACT_APP_API_BASE_URL}/v2/catalogo`,
+            configuracion
+          );
+
+          setCategorias(respuestaCatalogo.data);
+        } catch (errorCatalogoRespuesta) {
+          console.error(errorCatalogoRespuesta);
+          setCategorias([]);
+          setErrorCatalogo(
+            "No fue posible cargar las categorías."
+          );
+        }
 
       } catch (error) {
         console.error(error);
@@ -114,18 +134,30 @@ function App() {
     obtenerUsuarioBackend();
   }, [accounts, instance]);
 
-  //
+  //  ----------------- Funcion para REVISAR la solicitud -----------------
   const revisarSolicitud = () => {
     setErrorSolicitud("");
-    setSolicitudRevisada(null); // con este setteo, limpiaremos la revisión anterior
+    setSolicitudRevisada(null);
 
     if (
       titulo.trim() === "" ||
       descripcion.trim() === "" ||
+      categoriaId === "" ||
       prioridad === ""
     ) {
       setErrorSolicitud(
-        "Los campos título, descripción y prioridad son obligatorios."
+        "Los campos título, descripción, categoría y prioridad son obligatorios."
+      );
+      return;
+    }
+
+    const categoriaSeleccionada = categorias.find(
+      (categoria) => String(categoria.id) === categoriaId
+    );
+
+    if (!categoriaSeleccionada) {
+      setErrorSolicitud(
+        "La categoría seleccionada no es válida."
       );
       return;
     }
@@ -133,6 +165,8 @@ function App() {
     setSolicitudRevisada({
       titulo: titulo.trim(),
       descripcion: descripcion.trim(),
+      categoriaId: Number(categoriaId),
+      categoriaNombre: categoriaSeleccionada.nombre,
       prioridad
     });
   };
@@ -171,6 +205,7 @@ function App() {
       setSolicitudRevisada(null);
       setTitulo("");
       setDescripcion("");
+      setCategoriaId("");
       setPrioridad("");
     } catch (error) {
       console.error(error);
@@ -232,6 +267,7 @@ function App() {
   const limpiarFormulario = () => {
     setTitulo("");
     setDescripcion("");
+    setCategoriaId("");
     setPrioridad("");
     setErrorSolicitud("");
     setSolicitudRevisada(null);
@@ -336,11 +372,31 @@ function App() {
             <select
               id="categoria"
               className="form-select"
-              disabled
+              value={categoriaId}
+              onChange={(evento) => setCategoriaId(evento.target.value)}
+              disabled={categorias.length === 0}
               aria-describedby="ayudaCategoria"
             >
-              <option value="">Catálogo pendiente de conexión</option>
+              <option value="">Selecciona una categoría</option>
+
+              {categorias.map((categoria) => (
+                <option key={categoria.id} value={categoria.id}>
+                  {categoria.nombre}
+                </option>
+              ))}
             </select>
+
+            <div id="ayudaCategoria" className="form-text">
+              {categorias.length === 0
+                ? "No hay categorías disponibles."
+                : "Selecciona la categoría de la solicitud."}
+            </div>
+
+            {errorCatalogo && (
+              <div className="text-danger mt-1">
+                {errorCatalogo}
+              </div>
+            )}
 
             {/* form-text: texto de ayuda */}
             <div id="ayudaCategoria" className="form-text">
@@ -398,6 +454,7 @@ function App() {
               <h3>Resumen de la solicitud</h3>
               <p>Título: {solicitudRevisada.titulo}</p>
               <p>Descripción: {solicitudRevisada.descripcion}</p>
+              <p>Categoría: {solicitudRevisada.categoriaNombre}</p>
               <p>Prioridad: {solicitudRevisada.prioridad}</p>
               <p>Vista previa. La solicitud todavía no se ha enviado.</p>
               <button
@@ -415,6 +472,7 @@ function App() {
               <h3>Solicitud creada correctamente</h3>
               <p>ID: {solicitudCreada.id}</p>
               <p>Título: {solicitudCreada.titulo}</p>
+              <p>Categoría: {solicitudRevisada.categoriaNombre}</p>
               <p>Estado: {solicitudCreada.estado}</p>
             </div>
           )}
@@ -450,6 +508,7 @@ function App() {
                   <tr>
                     <th>ID</th>
                     <th>Título</th>
+                    <th>Categoría</th>
                     {esGestorSolicitudes && <th>Usuario</th>}
                     <th>Prioridad</th>
                     <th>Estado</th>
@@ -462,6 +521,7 @@ function App() {
                     <tr key={solicitud.id}>
                       <td>{solicitud.id}</td>
                       <td>{solicitud.titulo}</td>
+                      <td>{solicitud.categoriaNombre || "Sin categoría"}</td>
                       {esGestorSolicitudes && (
                         <td>{solicitud.usuario}</td>
                       )}

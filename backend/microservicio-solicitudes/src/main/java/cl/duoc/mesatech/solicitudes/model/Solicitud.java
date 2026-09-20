@@ -1,4 +1,5 @@
 package cl.duoc.mesatech.solicitudes.model;
+
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -15,6 +16,12 @@ public class Solicitud {
 
     @Column(nullable = false, length = 2000)
     private String descripcion;
+
+    @Column(name = "categoria_id")
+    private Long categoriaId;
+
+    @Column(name = "categoria_nombre", length = 150)
+    private String categoriaNombre;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
@@ -66,6 +73,22 @@ public class Solicitud {
 
     public void setDescripcion(String descripcion) {
         this.descripcion = descripcion;
+    }
+
+    public Long getCategoriaId() {
+        return categoriaId;
+    }
+
+    public void setCategoriaId(Long categoriaId) {
+        this.categoriaId = categoriaId;
+    }
+
+    public String getCategoriaNombre() {
+        return categoriaNombre;
+    }
+
+    public void setCategoriaNombre(String categoriaNombre) {
+        this.categoriaNombre = categoriaNombre;
     }
 
     public PrioridadSolicitud getPrioridad() {
