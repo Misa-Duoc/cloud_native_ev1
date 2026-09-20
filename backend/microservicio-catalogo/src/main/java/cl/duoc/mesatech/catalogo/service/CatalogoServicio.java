@@ -32,4 +32,25 @@ public class CatalogoServicio {
     public Optional<Categoria> buscarCategoria(Long id) {
         return categoriaRepositorio.findById(id);
     }
+    
+    public Categoria actualizarCategoria(Long id, CrearCategoriaPeticion peticion) {
+       
+        Categoria categoriaExistente = categoriaRepositorio.findById(id)
+                .orElseThrow(() -> new RuntimeException("Categoría no encontrada con el ID: " + id));
+
+       
+        categoriaExistente.setNombre(peticion.getNombre());
+        categoriaExistente.setDescripcion(peticion.getDescripcion());
+
+        return categoriaRepositorio.save(categoriaExistente);
+    }
+
+    //Se clasifica como void ya que su retorno no debe entregar nigun valor 
+    public void eliminarCategoria(Long id) {
+        
+        if (!categoriaRepositorio.existsById(id)) {
+            throw new RuntimeException("Categoría no encontrada con el ID: " + id);
+        }
+        categoriaRepositorio.deleteById(id);
+    }
 }
