@@ -31,6 +31,18 @@ function App() {
   const [solicitudCreada, setSolicitudCreada] = useState(null);
   const [solicitudes, setSolicitudes] = useState([]);
 
+  // Agregados para actualizar mediante patch
+  const [solicitudActualizandoId, setSolicitudActualizandoId] = useState(null);
+  const [mensajeEstado, setMensajeEstado] = useState("");
+  const [errorEstado, setErrorEstado] = useState("");
+
+  const esGestorSolicitudes =
+    usuarioBackend?.roles?.includes("ROLE_OPERADOR") ||
+    usuarioBackend?.roles?.includes("ROLE_ADMINISTRADOR");
+
+  const esCliente =
+    usuarioBackend?.roles?.includes("ROLE_CLIENTE");
+
 
   const iniciarSesion = () => {
     instance.loginRedirect(loginRequest)
@@ -60,23 +72,31 @@ function App() {
           account: accounts[0]
         });
 
-        // Reemplazo de respuesta
         const configuracion = {
           headers: {
             Authorization: `Bearer ${respuestaToken.accessToken}`
           }
         };
 
-        const [respuestaUsuario, respuestaSolicitudes] = await Promise.all([
-          Axios.get(
-            `${process.env.REACT_APP_API_BASE_URL}/v2/usuario`,
-            configuracion
-          ),
-          Axios.get(
-            `${process.env.REACT_APP_API_BASE_URL}/v2/solicitudes/mias`,
-            configuracion
-          )
-        ]);
+        const respuestaUsuario = await Axios.get(
+          `${process.env.REACT_APP_API_BASE_URL}/v2/usuario`,
+          configuracion
+        );
+
+        const rolesUsuario = respuestaUsuario.data.roles || [];
+
+        const puedeGestionarSolicitudes =
+          rolesUsuario.includes("ROLE_OPERADOR") ||
+          rolesUsuario.includes("ROLE_ADMINISTRADOR");
+
+        const rutaSolicitudes = puedeGestionarSolicitudes
+          ? "/v2/solicitudes"
+          : "/v2/solicitudes/mias";
+
+        const respuestaSolicitudes = await Axios.get(
+          `${process.env.REACT_APP_API_BASE_URL}${rutaSolicitudes}`,
+          configuracion
+        );
 
         setUsuarioBackend(respuestaUsuario.data);
         setSolicitudes(respuestaSolicitudes.data);
@@ -117,7 +137,7 @@ function App() {
     });
   };
 
-  //Funcion asincrona para enviar la solicitud
+  //  ----------------- Funcion asincrona para ENVIAR la solicitud -----------------
   const enviarSolicitud = async () => {
     if (!solicitudRevisada || accounts.length === 0) {
       return;
@@ -160,6 +180,55 @@ function App() {
     }
   };
 
+  //  ----------------- Funcion asincrona para ACTUALIZAR estado -----------------
+  const actualizarEstado = async (id, nuevoEstado) => {
+    if (accounts.length === 0) {
+      return;
+    }
+
+    setSolicitudActualizandoId(id);
+    setMensajeEstado("");
+    setErrorEstado("");
+
+    try {
+      const respuestaToken = await instance.acquireTokenSilent({
+        ...apiRequest,
+        account: accounts[0]
+      });
+
+      const respuesta = await Axios.patch(
+        `${process.env.REACT_APP_API_BASE_URL}/v2/solicitudes/${id}/estado`,
+        {
+          estado: nuevoEstado
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${respuestaToken.accessToken}`,
+            "Content-Type": "application/json"
+          }
+        }
+      );
+
+      setSolicitudes((solicitudesAnteriores) =>
+        solicitudesAnteriores.map((solicitud) =>
+          solicitud.id === id ? respuesta.data : solicitud
+        )
+      );
+
+      setMensajeEstado(
+        `Estado de la solicitud ${id} actualizado correctamente.`
+      );
+    } catch (error) {
+      console.error(error);
+      setErrorEstado(
+        `No fue posible actualizar la solicitud ${id}.`
+      );
+    } finally {
+      setSolicitudActualizandoId(null);
+    }
+  };
+
+  //  ----------------- Funcion para LIMPIAR el formulario -----------------
   const limpiarFormulario = () => {
     setTitulo("");
     setDescripcion("");
@@ -203,22 +272,6 @@ function App() {
               {" "}
               {accounts[0].username}
             </p>
-
-            {/*
-            <p>
-              id:
-              {" "}
-              {accounts[0].idTokenClaims.oid}
-            </p>
-            /
-            
-
-            <p>
-              idTokenClaims:
-              {" "}
-              {JSON.stringify(accounts[0].idTokenClaims)}
-            </p>
-            */}
           </>
         )}
 
@@ -242,7 +295,9 @@ function App() {
         {/*Recuerden que el mb es margin bottom , y mt es margin top (Margen de arriba o abajo) */}
 
         {/* ---------- TARJETA PARA NUEVA SOLICITUD ---------- */}
-        <div className="card p-3 mb-3"> {/* Div para el recuadro de solicitud */}
+        <div className="card p-3 mb-3"
+          style={{ display: esCliente ? "block" : "none" }}> {/* Div para el recuadro de solicitud */}
+
           <h2>Nueva solicitud</h2>
 
           <div className="mb-3">  {/* Titulo */}
@@ -366,9 +421,25 @@ function App() {
 
         </div>
 
-          {/* ---------- TARJETA PARA VER MIS SOLICITUDES ---------- */}
+        {/* ---------- TARJETA PARA VER MIS SOLICITUDES ---------- */}
         <div className="card p-3 mb-3">
-          <h2>Mis solicitudes</h2>
+          <h2>
+            {esGestorSolicitudes
+              ? "Gestión de solicitudes"
+              : "Mis solicitudes"}
+          </h2>
+
+          {mensajeEstado && (
+            <div className="alert alert-success">
+              {mensajeEstado}
+            </div>
+          )}
+
+          {errorEstado && (
+            <div className="alert alert-danger">
+              {errorEstado}
+            </div>
+          )}
 
           {solicitudes.length === 0 ? (
             <p>No tienes solicitudes registradas.</p>
@@ -391,7 +462,30 @@ function App() {
                       <td>{solicitud.id}</td>
                       <td>{solicitud.titulo}</td>
                       <td>{solicitud.prioridad}</td>
-                      <td>{solicitud.estado}</td>
+                      <td>
+                        {esGestorSolicitudes ? (
+                          <select
+                            className="form-select"
+                            value={solicitud.estado}
+                            onChange={(evento) =>
+                              actualizarEstado(
+                                solicitud.id,
+                                evento.target.value
+                              )
+                            }
+                            disabled={
+                              solicitudActualizandoId === solicitud.id
+                            }
+                          >
+                            <option value="PENDIENTE">Pendiente</option>
+                            <option value="EN_PROCESO">En proceso</option>
+                            <option value="RESUELTA">Resuelta</option>
+                            <option value="CANCELADA">Cancelada</option>
+                          </select>
+                        ) : (
+                          solicitud.estado
+                        )}
+                      </td>
                       <td>
                         {solicitud.fechaCreacion?.replace("T", " ")}
                       </td>

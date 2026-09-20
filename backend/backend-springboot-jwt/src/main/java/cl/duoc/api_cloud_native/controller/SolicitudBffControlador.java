@@ -24,6 +24,7 @@ public class SolicitudBffControlador {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('ROLE_CLIENTE')")
     public ResponseEntity<Object> crearSolicitud(
             @AuthenticationPrincipal Jwt jwt,
             @RequestBody Map<String, Object> peticion) {
@@ -34,6 +35,7 @@ public class SolicitudBffControlador {
     }
 
     @GetMapping
+    @PreAuthorize("hasAuthority('ROLE_CLIENTE')")
     public ResponseEntity<Object> listarSolicitudes(
             @AuthenticationPrincipal Jwt jwt) {
 
@@ -42,6 +44,7 @@ public class SolicitudBffControlador {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_CLIENTE')")
     public ResponseEntity<Object> buscarSolicitud(
             @PathVariable Long id,
             @AuthenticationPrincipal Jwt jwt) {
