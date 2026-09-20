@@ -22,7 +22,7 @@ public class CatalogoControlador {
         this.catalogoServicio = catalogoServicio;
     }
 
-    @PostMapping("/categorias")
+    @PostMapping
     public ResponseEntity<Categoria> crearCategoria(
             @Valid 
             @RequestBody 
@@ -35,12 +35,12 @@ public class CatalogoControlador {
                 .body(categoriaCreada);
     }
 
-    @GetMapping("/categorias")
+    @GetMapping
     public List<Categoria> listarCategorias() {
         return catalogoServicio.listarCategorias();
     }
 
-    @GetMapping("/categorias/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<Categoria> buscarCategoria(
             @PathVariable Long id) {
 
@@ -50,7 +50,7 @@ public class CatalogoControlador {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PutMapping("/categorias/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<Categoria> actualizarCategoria(
             @PathVariable Long id,
             @Valid @RequestBody CrearCategoriaPeticion peticion) {
@@ -64,7 +64,7 @@ public class CatalogoControlador {
         }
     }
 
-    @DeleteMapping("/categorias/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarCategoria(@PathVariable Long id) {
         try {
             catalogoServicio.eliminarCategoria(id);
