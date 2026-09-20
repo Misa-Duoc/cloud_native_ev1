@@ -3,6 +3,7 @@ package cl.duoc.mesatech.solicitudes.service;
 import cl.duoc.mesatech.solicitudes.dto.CrearSolicitudPeticion;
 import cl.duoc.mesatech.solicitudes.model.Solicitud;
 import cl.duoc.mesatech.solicitudes.repository.SolicitudRepositorio;
+import cl.duoc.mesatech.solicitudes.model.EstadoSolicitud;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -42,5 +43,22 @@ public class SolicitudServicio {
 
         return solicitudRepositorio
                 .findByIdAndUsuario(id, usuario.trim());
+    }
+
+    public List<Solicitud> listarTodasLasSolicitudes() {
+        return solicitudRepositorio
+                .findAllByOrderByFechaCreacionDesc();
+    }
+
+    public Optional<Solicitud> actualizarEstado(
+            Long id,
+            EstadoSolicitud estado) {
+
+        return solicitudRepositorio
+                .findById(id)
+                .map(solicitud -> {
+                    solicitud.setEstado(estado);
+                    return solicitudRepositorio.save(solicitud);
+                });
     }
 }

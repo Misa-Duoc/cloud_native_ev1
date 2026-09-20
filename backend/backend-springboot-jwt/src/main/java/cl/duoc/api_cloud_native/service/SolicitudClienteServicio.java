@@ -11,51 +11,72 @@ import java.util.Map;
 @Service
 public class SolicitudClienteServicio {
 
-    private final RestClient clienteSolicitudes;
+        private final RestClient clienteSolicitudes;
 
-    public SolicitudClienteServicio(
-            RestClient.Builder constructorCliente,
-            @Value("${microservicios.solicitudes.url}")
-            String urlSolicitudes) {
+        public SolicitudClienteServicio(
+                        RestClient.Builder constructorCliente,
+                        @Value("${microservicios.solicitudes.url}") String urlSolicitudes) {
 
-        this.clienteSolicitudes = constructorCliente
-                .baseUrl(urlSolicitudes)
-                .build();
-    }
+                this.clienteSolicitudes = constructorCliente
+                                .baseUrl(urlSolicitudes)
+                                .build();
+        }
 
-    public ResponseEntity<Object> crearSolicitud(
-            String usuario,
-            Map<String, Object> peticion) {
+        public ResponseEntity<Object> crearSolicitud(
+                        String usuario,
+                        Map<String, Object> peticion) {
 
-        return clienteSolicitudes
-                .post()
-                .uri("/api/solicitudes")
-                .header("X-Usuario", usuario)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(peticion)
-                .retrieve()
-                .toEntity(Object.class);
-    }
+                return clienteSolicitudes
+                                .post()
+                                .uri("/api/solicitudes")
+                                .header("X-Usuario", usuario)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .body(peticion)
+                                .retrieve()
+                                .toEntity(Object.class);
+        }
 
-    public ResponseEntity<Object> listarSolicitudes(String usuario) {
+        public ResponseEntity<Object> listarSolicitudes(String usuario) {
 
-        return clienteSolicitudes
-                .get()
-                .uri("/api/solicitudes")
-                .header("X-Usuario", usuario)
-                .retrieve()
-                .toEntity(Object.class);
-    }
+                return clienteSolicitudes
+                                .get()
+                                .uri("/api/solicitudes")
+                                .header("X-Usuario", usuario)
+                                .retrieve()
+                                .toEntity(Object.class);
+        }
 
-    public ResponseEntity<Object> buscarSolicitud(
-            Long id,
-            String usuario) {
+        public ResponseEntity<Object> buscarSolicitud(
+                        Long id,
+                        String usuario) {
 
-        return clienteSolicitudes
-                .get()
-                .uri("/api/solicitudes/{id}", id)
-                .header("X-Usuario", usuario)
-                .retrieve()
-                .toEntity(Object.class);
-    }
+                return clienteSolicitudes
+                                .get()
+                                .uri("/api/solicitudes/{id}", id)
+                                .header("X-Usuario", usuario)
+                                .retrieve()
+                                .toEntity(Object.class);
+        }
+
+        public ResponseEntity<Object> listarTodasLasSolicitudes() {
+
+                return clienteSolicitudes
+                                .get()
+                                .uri("/api/solicitudes/todas")
+                                .retrieve()
+                                .toEntity(Object.class);
+        }
+
+        public ResponseEntity<Object> actualizarEstado(
+                        Long id,
+                        Map<String, Object> peticion) {
+
+                return clienteSolicitudes
+                                .patch()
+                                .uri("/api/solicitudes/{id}/estado", id)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .body(peticion)
+                                .retrieve()
+                                .toEntity(Object.class);
+        }
 }
