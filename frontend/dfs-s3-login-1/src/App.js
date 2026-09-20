@@ -472,7 +472,7 @@ function App() {
               <h3>Solicitud creada correctamente</h3>
               <p>ID: {solicitudCreada.id}</p>
               <p>Título: {solicitudCreada.titulo}</p>
-              <p>Categoría: {solicitudRevisada.categoriaNombre}</p>
+              <p>Categoría: {solicitudCreada.categoriaNombre}</p>
               <p>Estado: {solicitudCreada.estado}</p>
             </div>
           )}
