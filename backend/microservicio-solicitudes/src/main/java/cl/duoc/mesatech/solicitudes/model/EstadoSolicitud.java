@@ -1,7 +1,9 @@
 package cl.duoc.mesatech.solicitudes.model;
 public enum EstadoSolicitud {
-    PENDIENTE,
+    CREADA,
+    ASIGNADA,
     EN_PROCESO,
     RESUELTA,
+    CERRADA,
     CANCELADA
 }

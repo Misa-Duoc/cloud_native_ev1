@@ -26,7 +26,11 @@ public class SolicitudServicio {
 
         solicitud.setTitulo(peticion.getTitulo().trim());
         solicitud.setDescripcion(peticion.getDescripcion().trim());
-        solicitud.setPrioridad(peticion.getPrioridad());
+        solicitud.setCategoriaId(peticion.getCategoriaId());
+        solicitud.setCategoriaNombre(
+                peticion.getCategoriaNombre().trim());
+        solicitud.setPrioridad(
+                peticion.getPrioridad().trim());
         solicitud.setUsuario(usuario.trim());
 
         return solicitudRepositorio.save(solicitud);
@@ -52,13 +56,48 @@ public class SolicitudServicio {
 
     public Optional<Solicitud> actualizarEstado(
             Long id,
-            EstadoSolicitud estado) {
+            EstadoSolicitud nuevoEstado) {
 
-        return solicitudRepositorio
-                .findById(id)
-                .map(solicitud -> {
-                    solicitud.setEstado(estado);
-                    return solicitudRepositorio.save(solicitud);
-                });
+        return solicitudRepositorio.findById(id).map(solicitud -> {
+            validarTransicion(
+                    solicitud.getEstado(),
+                    nuevoEstado);
+
+            solicitud.setEstado(nuevoEstado);
+            return solicitudRepositorio.save(solicitud);
+        });
+    }
+
+    private void validarTransicion(
+            EstadoSolicitud estadoActual,
+            EstadoSolicitud nuevoEstado) {
+
+        boolean transicionValida = switch (estadoActual) {
+            case CREADA ->
+                nuevoEstado == EstadoSolicitud.ASIGNADA
+                        || nuevoEstado == EstadoSolicitud.CANCELADA;
+
+            case ASIGNADA ->
+                nuevoEstado == EstadoSolicitud.EN_PROCESO
+                        || nuevoEstado == EstadoSolicitud.CANCELADA;
+
+            case EN_PROCESO ->
+                nuevoEstado == EstadoSolicitud.RESUELTA
+                        || nuevoEstado == EstadoSolicitud.CANCELADA;
+
+            case RESUELTA ->
+                nuevoEstado == EstadoSolicitud.CERRADA;
+
+            case CERRADA, CANCELADA -> false;
+        };
+
+        if (!transicionValida) {
+            throw new IllegalStateException(
+                    "No se puede cambiar el estado de "
+                            + estadoActual
+                            + " a "
+                            + nuevoEstado
+                            + ".");
+        }
     }
 }

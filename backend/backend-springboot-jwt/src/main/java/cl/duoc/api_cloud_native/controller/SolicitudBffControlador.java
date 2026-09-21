@@ -8,6 +8,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.Map;
 
@@ -24,6 +25,7 @@ public class SolicitudBffControlador {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('ROLE_CLIENTE')")
     public ResponseEntity<Object> crearSolicitud(
             @AuthenticationPrincipal Jwt jwt,
             @RequestBody Map<String, Object> peticion) {
@@ -34,6 +36,7 @@ public class SolicitudBffControlador {
     }
 
     @GetMapping
+    @PreAuthorize("hasAuthority('ROLE_CLIENTE')")
     public ResponseEntity<Object> listarSolicitudes(
             @AuthenticationPrincipal Jwt jwt) {
 
@@ -42,6 +45,7 @@ public class SolicitudBffControlador {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_CLIENTE')")
     public ResponseEntity<Object> buscarSolicitud(
             @PathVariable Long id,
             @AuthenticationPrincipal Jwt jwt) {
@@ -65,8 +69,17 @@ public class SolicitudBffControlador {
             @PathVariable Long id,
             @RequestBody Map<String, Object> peticion) {
 
-        return solicitudClienteServicio
-                .actualizarEstado(id, peticion);
+        try {
+            return solicitudClienteServicio
+                    .actualizarEstado(id, peticion);
+
+        } catch (HttpClientErrorException.Conflict error) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(Map.of(
+                            "mensaje",
+                            "El cambio de estado no está permitido."));
+        }
     }
 
     private String obtenerUsuario(Jwt jwt) {
