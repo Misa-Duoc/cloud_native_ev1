@@ -43,7 +43,7 @@ public class Solicitud {
     @PrePersist
     public void prepararAntesDeGuardar() {
         if (estado == null) {
-            estado = EstadoSolicitud.PENDIENTE;
+            estado = EstadoSolicitud.CREADA;
         }
 
         if (fechaCreacion == null) {

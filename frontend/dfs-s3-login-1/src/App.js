@@ -58,6 +58,54 @@ function App() {
   const esAdministrador =
     usuarioBackend?.roles?.includes("ROLE_ADMINISTRADOR");
 
+  const obtenerEstadosPermitidos = (estadoActual) => {
+    switch (estadoActual) {
+      case "CREADA":
+        return ["ASIGNADA", "CANCELADA"];
+
+      case "ASIGNADA":
+        return ["EN_PROCESO", "CANCELADA"];
+
+      case "EN_PROCESO":
+        return ["RESUELTA", "CANCELADA"];
+
+      case "RESUELTA":
+        return ["CERRADA"];
+
+      case "CERRADA":
+      case "CANCELADA":
+        return [];
+
+      default:
+        return [];
+    }
+  };
+
+  const mostrarEstado = (estado) => {
+    switch (estado) {
+      case "CREADA":
+        return "Creada";
+
+      case "ASIGNADA":
+        return "Asignada";
+
+      case "EN_PROCESO":
+        return "En proceso";
+
+      case "RESUELTA":
+        return "Resuelta";
+
+      case "CERRADA":
+        return "Cerrada";
+
+      case "CANCELADA":
+        return "Cancelada";
+
+      default:
+        return estado;
+    }
+  };
+
 
   const iniciarSesion = () => {
     instance.loginRedirect(loginRequest)
@@ -265,9 +313,12 @@ function App() {
       );
     } catch (error) {
       console.error(error);
-      setErrorEstado(
-        `No fue posible actualizar la solicitud ${id}.`
-      );
+
+      const mensajeError =
+        error.response?.data?.mensaje ||
+        `No fue posible actualizar la solicitud ${id}.`;
+
+      setErrorEstado(mensajeError);
     } finally {
       setSolicitudActualizandoId(null);
     }
@@ -749,7 +800,7 @@ function App() {
               <p>ID: {solicitudCreada.id}</p>
               <p>Título: {solicitudCreada.titulo}</p>
               <p>Categoría: {solicitudCreada.categoriaNombre}</p>
-              <p>Estado: {solicitudCreada.estado}</p>
+              <p>Estado: {mostrarEstado(solicitudCreada.estado)}</p>
             </div>
           )}
 
@@ -814,16 +865,29 @@ function App() {
                               )
                             }
                             disabled={
-                              solicitudActualizandoId === solicitud.id
+                              solicitudActualizandoId === solicitud.id ||
+                              obtenerEstadosPermitidos(
+                                solicitud.estado
+                              ).length === 0
                             }
                           >
-                            <option value="PENDIENTE">Pendiente</option>
-                            <option value="EN_PROCESO">En proceso</option>
-                            <option value="RESUELTA">Resuelta</option>
-                            <option value="CANCELADA">Cancelada</option>
+                            <option value={solicitud.estado}>
+                              {mostrarEstado(solicitud.estado)}
+                            </option>
+
+                            {obtenerEstadosPermitidos(
+                              solicitud.estado
+                            ).map((estadoPermitido) => (
+                              <option
+                                key={estadoPermitido}
+                                value={estadoPermitido}
+                              >
+                                {mostrarEstado(estadoPermitido)}
+                              </option>
+                            ))}
                           </select>
                         ) : (
-                          solicitud.estado
+                          mostrarEstado(solicitud.estado)
                         )}
                       </td>
                       <td>

@@ -8,6 +8,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.Map;
 
@@ -68,8 +69,17 @@ public class SolicitudBffControlador {
             @PathVariable Long id,
             @RequestBody Map<String, Object> peticion) {
 
-        return solicitudClienteServicio
-                .actualizarEstado(id, peticion);
+        try {
+            return solicitudClienteServicio
+                    .actualizarEstado(id, peticion);
+
+        } catch (HttpClientErrorException.Conflict error) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(Map.of(
+                            "mensaje",
+                            "El cambio de estado no está permitido."));
+        }
     }
 
     private String obtenerUsuario(Jwt jwt) {

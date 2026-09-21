@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import cl.duoc.mesatech.solicitudes.dto.ActualizarEstadoPeticion;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/solicitudes")
@@ -63,14 +64,22 @@ public class SolicitudControlador {
         }
 
         @PatchMapping("/{id}/estado")
-        public ResponseEntity<Solicitud> actualizarEstado(
+        public ResponseEntity<?> actualizarEstado(
                         @PathVariable Long id,
-
                         @Valid @RequestBody ActualizarEstadoPeticion peticion) {
 
-                return solicitudServicio
-                                .actualizarEstado(id, peticion.getEstado())
-                                .map(ResponseEntity::ok)
-                                .orElseGet(() -> ResponseEntity.notFound().build());
+                try {
+                        return solicitudServicio
+                                        .actualizarEstado(id, peticion.getEstado())
+                                        .map(ResponseEntity::ok)
+                                        .orElseGet(() -> ResponseEntity.notFound().build());
+
+                } catch (IllegalStateException error) {
+                        return ResponseEntity
+                                        .status(HttpStatus.CONFLICT)
+                                        .body(Map.of(
+                                                        "mensaje",
+                                                        error.getMessage()));
+                }
         }
 }
