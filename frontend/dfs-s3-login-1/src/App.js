@@ -43,6 +43,15 @@ function App() {
   const [procesandoCategoria, setProcesandoCategoria] = useState(false);
   const [mensajeCatalogo, setMensajeCatalogo] = useState("");
 
+  // Estados para administrar prioridades
+  const [prioridades, setPrioridades] = useState([]);
+  const [nombrePrioridad, setNombrePrioridad] = useState("");
+  const [descripcionPrioridad, setDescripcionPrioridad] = useState("");
+  const [prioridadEditandoId, setPrioridadEditandoId] = useState(null);
+  const [procesandoPrioridad, setProcesandoPrioridad] = useState(false);
+  const [mensajePrioridades, setMensajePrioridades] = useState("");
+  const [errorPrioridades, setErrorPrioridades] = useState("");
+
   // Agregados para actualizar mediante patch
   const [solicitudActualizandoId, setSolicitudActualizandoId] = useState(null);
   const [mensajeEstado, setMensajeEstado] = useState("");
@@ -129,6 +138,7 @@ function App() {
       setErrorBackend(null);
       setUsuarioBackend(null);
       setErrorCatalogo("");
+      setErrorPrioridades("");
 
       try {
         const respuestaToken = await instance.acquireTokenSilent({
@@ -179,6 +189,21 @@ function App() {
           );
         }
 
+        try {
+          const respuestaPrioridades = await Axios.get(
+            `${process.env.REACT_APP_API_BASE_URL}/v2/catalogo/prioridades`,
+            configuracion
+          );
+
+          setPrioridades(respuestaPrioridades.data);
+        } catch (errorPrioridadesRespuesta) {
+          console.error(errorPrioridadesRespuesta);
+          setPrioridades([]);
+          setErrorPrioridades(
+            "No fue posible cargar las prioridades."
+          );
+        }
+
       } catch (error) {
         console.error(error);
         setErrorBackend(
@@ -220,12 +245,24 @@ function App() {
       return;
     }
 
+    const prioridadSeleccionada = prioridades.find(
+      (prioridadCatalogo) =>
+        prioridadCatalogo.nombre === prioridad
+    );
+
+    if (!prioridadSeleccionada) {
+      setErrorSolicitud(
+        "La prioridad seleccionada no es válida."
+      );
+      return;
+    }
+
     setSolicitudRevisada({
       titulo: titulo.trim(),
       descripcion: descripcion.trim(),
       categoriaId: Number(categoriaId),
       categoriaNombre: categoriaSeleccionada.nombre,
-      prioridad
+      prioridad: prioridadSeleccionada.nombre
     });
   };
 
@@ -483,6 +520,149 @@ function App() {
     }
   };
 
+  //  ----------------- Función para crear o actualizar una prioridad -----------------
+  const guardarPrioridad = async () => {
+    if (accounts.length === 0) {
+      return;
+    }
+
+    if (nombrePrioridad.trim() === "") {
+      setErrorPrioridades(
+        "El nombre de la prioridad es obligatorio."
+      );
+      return;
+    }
+
+    setProcesandoPrioridad(true);
+    setMensajePrioridades("");
+    setErrorPrioridades("");
+
+    try {
+      const configuracion =
+        await obtenerConfiguracionAutorizada();
+
+      const peticion = {
+        nombre: nombrePrioridad.trim().toUpperCase(),
+        descripcion: descripcionPrioridad.trim()
+      };
+
+      if (prioridadEditandoId === null) {
+        const respuesta = await Axios.post(
+          `${process.env.REACT_APP_API_BASE_URL}/v2/catalogo/prioridades`,
+          peticion,
+          configuracion
+        );
+
+        setPrioridades((prioridadesAnteriores) => [
+          ...prioridadesAnteriores,
+          respuesta.data
+        ]);
+
+        setMensajePrioridades(
+          "Prioridad creada correctamente."
+        );
+      } else {
+        const respuesta = await Axios.put(
+          `${process.env.REACT_APP_API_BASE_URL}/v2/catalogo/prioridades/${prioridadEditandoId}`,
+          peticion,
+          configuracion
+        );
+
+        setPrioridades((prioridadesAnteriores) =>
+          prioridadesAnteriores.map((prioridadActual) =>
+            prioridadActual.id === prioridadEditandoId
+              ? respuesta.data
+              : prioridadActual
+          )
+        );
+
+        setMensajePrioridades(
+          "Prioridad actualizada correctamente."
+        );
+      }
+
+      setNombrePrioridad("");
+      setDescripcionPrioridad("");
+      setPrioridadEditandoId(null);
+    } catch (error) {
+      console.error(error);
+      setErrorPrioridades(
+        "No fue posible guardar la prioridad."
+      );
+    } finally {
+      setProcesandoPrioridad(false);
+    }
+  };
+
+  //  ----------------- Función para preparar la edición de una prioridad -----------------
+  const prepararEdicionPrioridad = (prioridadCatalogo) => {
+    setPrioridadEditandoId(prioridadCatalogo.id);
+    setNombrePrioridad(prioridadCatalogo.nombre);
+    setDescripcionPrioridad(
+      prioridadCatalogo.descripcion || ""
+    );
+    setMensajePrioridades("");
+    setErrorPrioridades("");
+  };
+
+  //  ----------------- Función para cancelar la edición de una prioridad -----------------
+  const cancelarEdicionPrioridad = () => {
+    setPrioridadEditandoId(null);
+    setNombrePrioridad("");
+    setDescripcionPrioridad("");
+    setMensajePrioridades("");
+    setErrorPrioridades("");
+  };
+
+  //  ----------------- Función para eliminar una prioridad -----------------
+  const eliminarPrioridad = async (prioridadCatalogo) => {
+    const confirmacion = window.confirm(
+      `¿Deseas eliminar la prioridad ${prioridadCatalogo.nombre}?`
+    );
+
+    if (!confirmacion || accounts.length === 0) {
+      return;
+    }
+
+    setProcesandoPrioridad(true);
+    setMensajePrioridades("");
+    setErrorPrioridades("");
+
+    try {
+      const configuracion =
+        await obtenerConfiguracionAutorizada();
+
+      await Axios.delete(
+        `${process.env.REACT_APP_API_BASE_URL}/v2/catalogo/prioridades/${prioridadCatalogo.id}`,
+        configuracion
+      );
+
+      setPrioridades((prioridadesAnteriores) =>
+        prioridadesAnteriores.filter(
+          (prioridadActual) =>
+            prioridadActual.id !== prioridadCatalogo.id
+        )
+      );
+
+      if (prioridadEditandoId === prioridadCatalogo.id) {
+        setPrioridadEditandoId(null);
+        setNombrePrioridad("");
+        setDescripcionPrioridad("");
+      }
+
+      setMensajePrioridades(
+        "Prioridad eliminada correctamente."
+      );
+    } catch (error) {
+      console.error(error);
+      setErrorPrioridades(
+        "No fue posible eliminar la prioridad."
+      );
+    } finally {
+      setProcesandoPrioridad(false);
+    }
+  };
+
   //  ----------------- Funcion para LIMPIAR el formulario -----------------
   const limpiarFormulario = () => {
     setTitulo("");
@@ -661,6 +841,148 @@ function App() {
           </div>
         )}
 
+        {/* ---------- TARJETA ADMINISTRACIÓN DE PRIORIDADES ---------- */}
+        {esAdministrador && (
+          <div className="card p-3 mb-3">
+            <h2>Administración de prioridades</h2>
+
+            {mensajePrioridades && (
+              <div className="alert alert-success">
+                {mensajePrioridades}
+              </div>
+            )}
+
+            {errorPrioridades && (
+              <div className="alert alert-danger">
+                {errorPrioridades}
+              </div>
+            )}
+
+            <div className="mb-3">
+              <label
+                htmlFor="nombrePrioridad"
+                className="form-label"
+              >
+                Nombre
+              </label>
+
+              <input
+                id="nombrePrioridad"
+                type="text"
+                className="form-control"
+                value={nombrePrioridad}
+                onChange={(evento) =>
+                  setNombrePrioridad(evento.target.value)
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label
+                htmlFor="descripcionPrioridad"
+                className="form-label"
+              >
+                Descripción
+              </label>
+
+              <textarea
+                id="descripcionPrioridad"
+                className="form-control"
+                rows={3}
+                value={descripcionPrioridad}
+                onChange={(evento) =>
+                  setDescripcionPrioridad(evento.target.value)
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <button
+                type="button"
+                className="btn btn-primary me-2"
+                onClick={guardarPrioridad}
+                disabled={procesandoPrioridad}
+              >
+                {procesandoPrioridad
+                  ? "Guardando..."
+                  : prioridadEditandoId === null
+                    ? "Crear prioridad"
+                    : "Guardar cambios"}
+              </button>
+
+              {prioridadEditandoId !== null && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={cancelarEdicionPrioridad}
+                  disabled={procesandoPrioridad}
+                >
+                  Cancelar edición
+                </button>
+              )}
+            </div>
+
+            <h3>Prioridades registradas</h3>
+
+            {prioridades.length === 0 ? (
+              <p>No hay prioridades registradas.</p>
+            ) : (
+              <div className="table-responsive">
+                <table className="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Nombre</th>
+                      <th>Descripción</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {prioridades.map((prioridadCatalogo) => (
+                      <tr key={prioridadCatalogo.id}>
+                        <td>{prioridadCatalogo.id}</td>
+                        <td>{prioridadCatalogo.nombre}</td>
+                        <td>
+                          {prioridadCatalogo.descripcion ||
+                            "Sin descripción"}
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className="btn btn-warning btn-sm me-2"
+                            onClick={() =>
+                              prepararEdicionPrioridad(
+                                prioridadCatalogo
+                              )
+                            }
+                            disabled={procesandoPrioridad}
+                          >
+                            Editar
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn btn-danger btn-sm"
+                            onClick={() =>
+                              eliminarPrioridad(
+                                prioridadCatalogo
+                              )
+                            }
+                            disabled={procesandoPrioridad}
+                          >
+                            Eliminar
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
         {/*  ----------------- TARJETA PARA NUEVA SOLICITUD  ----------------- */}
         {/*Recuerden que el mb es margin bottom , y mt es margin top (Margen de arriba o abajo) */}
         <div className="card p-3 mb-3"
@@ -741,13 +1063,36 @@ function App() {
               id="prioridad"
               className="form-select"
               value={prioridad}
-              onChange={(evento) => setPrioridad(evento.target.value)}
+              onChange={(evento) =>
+                setPrioridad(evento.target.value)
+              }
+              disabled={prioridades.length === 0}
             >
-              <option value="">Selecciona una prioridad</option>
-              <option value="BAJA">Baja</option>
-              <option value="MEDIA">Media</option>
-              <option value="ALTA">Alta</option>
+              <option value="">
+                Selecciona una prioridad
+              </option>
+
+              {prioridades.map((prioridadCatalogo) => (
+                <option
+                  key={prioridadCatalogo.id}
+                  value={prioridadCatalogo.nombre}
+                >
+                  {prioridadCatalogo.nombre}
+                </option>
+              ))}
             </select>
+
+            <div className="form-text">
+              {prioridades.length === 0
+                ? "No hay prioridades disponibles."
+                : "Selecciona la prioridad de la solicitud."}
+            </div>
+
+            {errorPrioridades && (
+              <div className="text-danger mt-1">
+                {errorPrioridades}
+              </div>
+            )}
           </div>
 
           {/* alert: recuadro de aviso; alert-danger: color de error */}

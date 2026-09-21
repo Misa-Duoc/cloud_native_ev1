@@ -1,6 +1,5 @@
 package cl.duoc.mesatech.solicitudes.dto;
 
-import cl.duoc.mesatech.solicitudes.model.PrioridadSolicitud;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -15,8 +14,9 @@ public class CrearSolicitudPeticion {
     @Size(max = 2000, message = "La descripción no puede superar los 2000 caracteres.")
     private String descripcion;
 
-    @NotNull(message = "La prioridad es obligatoria.")
-    private PrioridadSolicitud prioridad;
+    @NotBlank(message = "La prioridad es obligatoria.")
+    @Size(max = 50, message = "La prioridad no puede superar los 50 caracteres.")
+    private String prioridad;
 
     @NotNull(message = "La categoría es obligatoria.")
     private Long categoriaId;
@@ -44,11 +44,11 @@ public class CrearSolicitudPeticion {
         this.descripcion = descripcion;
     }
 
-    public PrioridadSolicitud getPrioridad() {
+    public String getPrioridad() {
         return prioridad;
     }
 
-    public void setPrioridad(PrioridadSolicitud prioridad) {
+    public void setPrioridad(String prioridad) {
         this.prioridad = prioridad;
     }
 

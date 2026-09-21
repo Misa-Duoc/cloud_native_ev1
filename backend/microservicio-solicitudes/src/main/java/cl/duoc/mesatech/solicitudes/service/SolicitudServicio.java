@@ -29,7 +29,8 @@ public class SolicitudServicio {
         solicitud.setCategoriaId(peticion.getCategoriaId());
         solicitud.setCategoriaNombre(
                 peticion.getCategoriaNombre().trim());
-        solicitud.setPrioridad(peticion.getPrioridad());
+        solicitud.setPrioridad(
+                peticion.getPrioridad().trim());
         solicitud.setUsuario(usuario.trim());
 
         return solicitudRepositorio.save(solicitud);

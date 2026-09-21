@@ -23,9 +23,8 @@ public class Solicitud {
     @Column(name = "categoria_nombre", length = 150)
     private String categoriaNombre;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 10)
-    private PrioridadSolicitud prioridad;
+    @Column(nullable = false, length = 50)
+    private String prioridad;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -91,11 +90,11 @@ public class Solicitud {
         this.categoriaNombre = categoriaNombre;
     }
 
-    public PrioridadSolicitud getPrioridad() {
+    public String getPrioridad() {
         return prioridad;
     }
 
-    public void setPrioridad(PrioridadSolicitud prioridad) {
+    public void setPrioridad(String prioridad) {
         this.prioridad = prioridad;
     }
 
