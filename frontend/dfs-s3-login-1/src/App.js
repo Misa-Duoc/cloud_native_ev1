@@ -678,11 +678,6 @@ function App() {
                 {errorCatalogo}
               </div>
             )}
-
-            {/* form-text: texto de ayuda */}
-            <div id="ayudaCategoria" className="form-text">
-              Las categorías se cargarán desde el catálogo.
-            </div>
           </div>
 
           <div className="mb-3">  {/* Prioridad */}
