@@ -10,12 +10,12 @@ import org.springframework.web.client.RestTemplate;
 @RequestMapping("/api/catalogo/prioridades")
 public class PrioridadBffControlador {
 
-    @Value("${CATALOGO_URL:http://10.0.0.214:8082}")
+    @Value("${microservicios.catalogo.url}")
     private String catalogoUrl;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    // GET: Cliente, Operador y Administrador
+    // el get solo cliente, operador y admin
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ROLE_CLIENTE', 'ROLE_OPERADOR', 'ROLE_ADMINISTRADOR')")
     public ResponseEntity<?> listar() {
@@ -23,7 +23,7 @@ public class PrioridadBffControlador {
         return restTemplate.getForEntity(url, Object.class);
     }
 
-    // POST: Solo Administrador
+    // el post solo admin
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_ADMINISTRADOR')")
     public ResponseEntity<?> crear(@RequestBody Object body) {
@@ -34,7 +34,7 @@ public class PrioridadBffControlador {
         return restTemplate.postForEntity(url, entity, Object.class);
     }
 
-    // PUT: Solo Administrador
+    // el put solo admin
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_ADMINISTRADOR')")
     public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody Object body) {
@@ -45,7 +45,7 @@ public class PrioridadBffControlador {
         return restTemplate.exchange(url, HttpMethod.PUT, entity, Object.class);
     }
 
-    // DELETE: Solo Administrador
+    // el delete solo admin
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_ADMINISTRADOR')")
     public ResponseEntity<?> eliminar(@PathVariable Long id) {
