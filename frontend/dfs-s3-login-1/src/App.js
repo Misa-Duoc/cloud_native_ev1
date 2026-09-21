@@ -36,6 +36,13 @@ function App() {
   const [categoriaId, setCategoriaId] = useState("");
   const [errorCatalogo, setErrorCatalogo] = useState("");
 
+  // Estados para administrar el catalogo
+  const [nombreCategoria, setNombreCategoria] = useState("");
+  const [descripcionCategoria, setDescripcionCategoria] = useState("");
+  const [categoriaEditandoId, setCategoriaEditandoId] = useState(null);
+  const [procesandoCategoria, setProcesandoCategoria] = useState(false);
+  const [mensajeCatalogo, setMensajeCatalogo] = useState("");
+
   // Agregados para actualizar mediante patch
   const [solicitudActualizandoId, setSolicitudActualizandoId] = useState(null);
   const [mensajeEstado, setMensajeEstado] = useState("");
@@ -47,6 +54,9 @@ function App() {
 
   const esCliente =
     usuarioBackend?.roles?.includes("ROLE_CLIENTE");
+
+  const esAdministrador =
+    usuarioBackend?.roles?.includes("ROLE_ADMINISTRADOR");
 
 
   const iniciarSesion = () => {
@@ -263,6 +273,165 @@ function App() {
     }
   };
 
+  //  ----------------- Funcion asincrona de configuración autorizada para el catálogo -----------------
+  const obtenerConfiguracionAutorizada = async () => {
+    const respuestaToken = await instance.acquireTokenSilent({
+      ...apiRequest,
+      account: accounts[0]
+    });
+
+    return {
+      headers: {
+        Authorization: `Bearer ${respuestaToken.accessToken}`,
+        "Content-Type": "application/json"
+      }
+    };
+  };
+
+  //  ----------------- Funcion asincrona de crear o actualizar una categoría -----------------
+  const guardarCategoria = async () => {
+    if (accounts.length === 0) {
+      return;
+    }
+
+    if (
+      nombreCategoria.trim() === "" ||
+      descripcionCategoria.trim() === ""
+    ) {
+      setErrorCatalogo(
+        "El nombre y la descripción de la categoría son obligatorios."
+      );
+      return;
+    }
+
+    setProcesandoCategoria(true);
+    setMensajeCatalogo("");
+    setErrorCatalogo("");
+
+    try {
+      const configuracion =
+        await obtenerConfiguracionAutorizada();
+
+      const peticion = {
+        nombre: nombreCategoria.trim(),
+        descripcion: descripcionCategoria.trim()
+      };
+
+      if (categoriaEditandoId === null) {
+        const respuesta = await Axios.post(
+          `${process.env.REACT_APP_API_BASE_URL}/v2/catalogo`,
+          peticion,
+          configuracion
+        );
+
+        setCategorias((categoriasAnteriores) => [
+          ...categoriasAnteriores,
+          respuesta.data
+        ]);
+
+        setMensajeCatalogo(
+          "Categoría creada correctamente."
+        );
+      } else {
+        const respuesta = await Axios.put(
+          `${process.env.REACT_APP_API_BASE_URL}/v2/catalogo/${categoriaEditandoId}`,
+          peticion,
+          configuracion
+        );
+
+        setCategorias((categoriasAnteriores) =>
+          categoriasAnteriores.map((categoria) =>
+            categoria.id === categoriaEditandoId
+              ? respuesta.data
+              : categoria
+          )
+        );
+
+        setMensajeCatalogo(
+          "Categoría actualizada correctamente."
+        );
+      }
+
+      setNombreCategoria("");
+      setDescripcionCategoria("");
+      setCategoriaEditandoId(null);
+    } catch (error) {
+      console.error(error);
+      setErrorCatalogo(
+        "No fue posible guardar la categoría."
+      );
+    } finally {
+      setProcesandoCategoria(false);
+    }
+  };
+
+  //  ----------------- Funcion que Coloca una categoría existente dentro del formulario -----------------
+  const prepararEdicionCategoria = (categoria) => {
+    setCategoriaEditandoId(categoria.id);
+    setNombreCategoria(categoria.nombre);
+    setDescripcionCategoria(categoria.descripcion);
+    setMensajeCatalogo("");
+    setErrorCatalogo("");
+  };
+
+  //  ----------------- Funcion que cancela la edición y vacía el formulario -----------------
+  const cancelarEdicionCategoria = () => {
+    setCategoriaEditandoId(null);
+    setNombreCategoria("");
+    setDescripcionCategoria("");
+    setMensajeCatalogo("");
+    setErrorCatalogo("");
+  };
+
+  //  ----------------- Funcion que Elimina una categoría -----------------
+  const eliminarCategoria = async (categoria) => {
+    const confirmacion = window.confirm(
+      `¿Deseas eliminar la categoría ${categoria.nombre}?`
+    );
+
+    if (!confirmacion || accounts.length === 0) {
+      return;
+    }
+
+    setProcesandoCategoria(true);
+    setMensajeCatalogo("");
+    setErrorCatalogo("");
+
+    try {
+      const configuracion =
+        await obtenerConfiguracionAutorizada();
+
+      await Axios.delete(
+        `${process.env.REACT_APP_API_BASE_URL}/v2/catalogo/${categoria.id}`,
+        configuracion
+      );
+
+      setCategorias((categoriasAnteriores) =>
+        categoriasAnteriores.filter(
+          (categoriaActual) =>
+            categoriaActual.id !== categoria.id
+        )
+      );
+
+      if (categoriaEditandoId === categoria.id) {
+        setCategoriaEditandoId(null);
+        setNombreCategoria("");
+        setDescripcionCategoria("");
+      }
+
+      setMensajeCatalogo(
+        "Categoría eliminada correctamente."
+      );
+    } catch (error) {
+      console.error(error);
+      setErrorCatalogo(
+        "No fue posible eliminar la categoría."
+      );
+    } finally {
+      setProcesandoCategoria(false);
+    }
+  };
+
   //  ----------------- Funcion para LIMPIAR el formulario -----------------
   const limpiarFormulario = () => {
     setTitulo("");
@@ -295,22 +464,6 @@ function App() {
         )}
 
         <h2>Usuario autenticado</h2>
-        {accounts.length > 0 && (
-          <>
-            <p>
-              Nombre:
-              {" "}
-              {accounts[0].name}
-            </p>
-
-            <p>
-              Usuario:
-              {" "}
-              {accounts[0].username}
-            </p>
-          </>
-        )}
-
 
         {usuarioBackend && (
           <div className="alert alert-success">
@@ -328,9 +481,137 @@ function App() {
           </div>
         )}
 
-        {/*Recuerden que el mb es margin bottom , y mt es margin top (Margen de arriba o abajo) */}
+        {/* ---------- TARJETA ADMINISTRACIÓN DEL CATÁLOGO ---------- */}
+        {esAdministrador && (
+          <div className="card p-3 mb-3">
+            <h2>Administración del catálogo</h2>
 
-        {/* ---------- TARJETA PARA NUEVA SOLICITUD ---------- */}
+            {mensajeCatalogo && (
+              <div className="alert alert-success">
+                {mensajeCatalogo}
+              </div>
+            )}
+
+            {errorCatalogo && (
+              <div className="alert alert-danger">
+                {errorCatalogo}
+              </div>
+            )}
+
+            <div className="mb-3">
+              <label htmlFor="nombreCategoria" className="form-label">
+                Nombre
+              </label>
+
+              <input
+                id="nombreCategoria"
+                type="text"
+                className="form-control"
+                value={nombreCategoria}
+                onChange={(evento) =>
+                  setNombreCategoria(evento.target.value)
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="descripcionCategoria" className="form-label">
+                Descripción
+              </label>
+
+              <textarea
+                id="descripcionCategoria"
+                className="form-control"
+                rows={3}
+                value={descripcionCategoria}
+                onChange={(evento) =>
+                  setDescripcionCategoria(evento.target.value)
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <button
+                type="button"
+                className="btn btn-primary me-2"
+                onClick={guardarCategoria}
+                disabled={procesandoCategoria}
+              >
+                {procesandoCategoria
+                  ? "Guardando..."
+                  : categoriaEditandoId === null
+                    ? "Crear categoría"
+                    : "Guardar cambios"}
+              </button>
+
+              {categoriaEditandoId !== null && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={cancelarEdicionCategoria}
+                  disabled={procesandoCategoria}
+                >
+                  Cancelar edición
+                </button>
+              )}
+            </div>
+
+            <h3>Categorías registradas</h3>
+
+            {categorias.length === 0 ? (
+              <p>No hay categorías registradas.</p>
+            ) : (
+              <div className="table-responsive">
+                <table className="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Nombre</th>
+                      <th>Descripción</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {categorias.map((categoria) => (
+                      <tr key={categoria.id}>
+                        <td>{categoria.id}</td>
+                        <td>{categoria.nombre}</td>
+                        <td>{categoria.descripcion}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className="btn btn-warning btn-sm me-2"
+                            onClick={() =>
+                              prepararEdicionCategoria(categoria)
+                            }
+                            disabled={procesandoCategoria}
+                          >
+                            Editar
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn btn-danger btn-sm"
+                            onClick={() =>
+                              eliminarCategoria(categoria)
+                            }
+                            disabled={procesandoCategoria}
+                          >
+                            Eliminar
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/*  ----------------- TARJETA PARA NUEVA SOLICITUD  ----------------- */}
+        {/*Recuerden que el mb es margin bottom , y mt es margin top (Margen de arriba o abajo) */}
         <div className="card p-3 mb-3"
           style={{ display: esCliente ? "block" : "none" }}> {/* Div para el recuadro de solicitud */}
 
@@ -433,7 +714,7 @@ function App() {
           {/* btn: estilo de botón, btn-primary: color principal (Los colores estan en bootstrap) */}
           <button
             type="button"
-            className="btn btn-primary mt-3"
+            className="btn btn-primary mt-3 me-2"
             onClick={revisarSolicitud}
           >
             Revisar solicitud
@@ -479,7 +760,7 @@ function App() {
 
         </div>
 
-        {/* ---------- TARJETA PARA VER MIS SOLICITUDES ---------- */}
+        {/*  ----------------- TARJETA PARA VER MIS SOLICITUDES  ----------------- */}
         <div className="card p-3 mb-3">
           <h2>
             {esGestorSolicitudes
@@ -560,7 +841,7 @@ function App() {
             </div>
           )}
         </div>
-
+        {/* ----------------- BOTÓN PARA CERRAR LA SESIÓN  ----------------- */}
         <button onClick={cerrarSesion} className="btn btn-danger">
           Cerrar sesión
         </button>
