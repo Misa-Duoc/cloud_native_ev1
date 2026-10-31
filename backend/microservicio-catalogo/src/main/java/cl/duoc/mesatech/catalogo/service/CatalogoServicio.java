@@ -2,6 +2,7 @@ package cl.duoc.mesatech.catalogo.service;
 
 import cl.duoc.mesatech.catalogo.dto.CrearCategoriaPeticion;
 import cl.duoc.mesatech.catalogo.model.Categoria;
+import cl.duoc.mesatech.catalogo.publisher.CategoriaPublisher;
 import cl.duoc.mesatech.catalogo.repository.CategoriaRepositorio;
 import org.springframework.stereotype.Service;
 
@@ -12,17 +13,25 @@ import java.util.Optional;
 public class CatalogoServicio {
 
     private final CategoriaRepositorio categoriaRepositorio;
+    private final CategoriaPublisher categoriaPublisher;
 
-    public CatalogoServicio(CategoriaRepositorio categoriaRepositorio) {
+    // Inyección por constructor del repositorio y del componente Publisher
+    public CatalogoServicio(CategoriaRepositorio categoriaRepositorio, CategoriaPublisher categoriaPublisher) {
         this.categoriaRepositorio = categoriaRepositorio;
+        this.categoriaPublisher = categoriaPublisher;
     }
 
     public Categoria crearCategoria(CrearCategoriaPeticion peticion) {
         Categoria categoria = new Categoria();
         categoria.setNombre(peticion.getNombre());
         categoria.setDescripcion(peticion.getDescripcion());
-        
-        return categoriaRepositorio.save(categoria);
+
+        Categoria categoriaGuardada = categoriaRepositorio.save(categoria);
+
+        // Publicación a RabbitMQ delegada a la clase CategoriaPublisher
+        categoriaPublisher.publicarCategoriaCreada(categoriaGuardada);
+
+        return categoriaGuardada;
     }
 
     public List<Categoria> listarCategorias() {
@@ -32,22 +41,18 @@ public class CatalogoServicio {
     public Optional<Categoria> buscarCategoria(Long id) {
         return categoriaRepositorio.findById(id);
     }
-    
+
     public Categoria actualizarCategoria(Long id, CrearCategoriaPeticion peticion) {
-       
         Categoria categoriaExistente = categoriaRepositorio.findById(id)
                 .orElseThrow(() -> new RuntimeException("Categoría no encontrada con el ID: " + id));
 
-       
         categoriaExistente.setNombre(peticion.getNombre());
         categoriaExistente.setDescripcion(peticion.getDescripcion());
 
         return categoriaRepositorio.save(categoriaExistente);
     }
 
-    //Se clasifica como void ya que su retorno no debe entregar nigun valor 
     public void eliminarCategoria(Long id) {
-        
         if (!categoriaRepositorio.existsById(id)) {
             throw new RuntimeException("Categoría no encontrada con el ID: " + id);
         }
