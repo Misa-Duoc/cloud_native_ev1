@@ -9,6 +9,6 @@ public class CategoriaEventoConsumidor {
 
     @RabbitListener(queues = "${rabbitmq.queue.name:categoria.creada.queue}")
     public void recibirCategoriaCreada(CategoriaDTO categoria) {
-        System.out.println("<- [RabbitMQ] Evento recibido en Solicitudes: " + categoria.getNombre());
+        System.out.println("[RabbitMQ] Evento recibido en las Solicitudes: " + categoria.getNombre());
     }
 }

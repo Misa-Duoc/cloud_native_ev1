@@ -15,6 +15,6 @@ public class CategoriaPublisher {
 
     public void publicarCategoriaCreada(Categoria categoria) {
         rabbitTemplate.convertAndSend("catalogo.exchange", "categoria.creada.key", categoria);
-        System.out.println("-> [RabbitMQ] Evento publicado desde Catálogo: " + categoria.getNombre());
+        System.out.println("[RabbitMQ] Evento publicado desde Catálogo: " + categoria.getNombre());
     }
 }
