@@ -5,6 +5,8 @@
     <option name="originalFiles">
       <list>
         <option value="$PROJECT_DIR$/backend/backend-springboot-jwt/pom.xml" />
+        <option value="$PROJECT_DIR$/backend/microservicio-catalogo/pom.xml" />
+        <option value="$PROJECT_DIR$/backend/microservicio-solicitudes/pom.xml" />
       </list>
     </option>
   </component>
