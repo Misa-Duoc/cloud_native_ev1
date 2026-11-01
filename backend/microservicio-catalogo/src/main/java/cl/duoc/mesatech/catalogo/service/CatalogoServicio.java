@@ -31,9 +31,9 @@ public class CatalogoServicio {
 
         try {
             categoriaPublisher.publicarCategoriaCreada(categoriaGuardada);
-            System.out.println("-> [Catálogo] Evento publicado a RabbitMQ para ID: " + categoriaGuardada.getId());
+            System.out.println("[Catálogo] Evento publicado a RabbitMQ para ID: " + categoriaGuardada.getId());
         } catch (Exception e) {
-            System.err.println("X [Catálogo] Error al enviar evento a RabbitMQ: " + e.getMessage());
+            System.err.println("[Catálogo] Error al enviar evento a RabbitMQ: " + e.getMessage());
         }
 
         return categoriaGuardada;
