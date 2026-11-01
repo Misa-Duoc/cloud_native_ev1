@@ -31,7 +31,7 @@ public class RabbitMQConfig {
         return BindingBuilder.bind(queue).to(exchange).with(ROUTING_KEY);
     }
 
-    // Convertidor para enviar los mensajes estructurados en JSON
+    // El Jackson2 permite que los objetos en Java se conviertan automáticamente a JSON
     @Bean
     public MessageConverter jsonMessageConverter() {
         return new Jackson2JsonMessageConverter();
