@@ -2,7 +2,6 @@ package cl.duoc.mesatech.catalogo.service;
 
 import cl.duoc.mesatech.catalogo.dto.CrearCategoriaPeticion;
 import cl.duoc.mesatech.catalogo.model.Categoria;
-import cl.duoc.mesatech.catalogo.publisher.CategoriaPublisher;
 import cl.duoc.mesatech.catalogo.repository.CategoriaRepositorio;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,11 +13,10 @@ import java.util.Optional;
 public class CatalogoServicio {
 
     private final CategoriaRepositorio categoriaRepositorio;
-    private final CategoriaPublisher categoriaPublisher;
 
-    public CatalogoServicio(CategoriaRepositorio categoriaRepositorio, CategoriaPublisher categoriaPublisher) {
+    public CatalogoServicio(CategoriaRepositorio categoriaRepositorio) {
         this.categoriaRepositorio = categoriaRepositorio;
-        this.categoriaPublisher = categoriaPublisher;
+
     }
 
     @Transactional
@@ -26,17 +24,7 @@ public class CatalogoServicio {
         Categoria categoria = new Categoria();
         categoria.setNombre(peticion.getNombre());
         categoria.setDescripcion(peticion.getDescripcion());
-
-        Categoria categoriaGuardada = categoriaRepositorio.save(categoria);
-
-        try {
-            categoriaPublisher.publicarCategoriaCreada(categoriaGuardada);
-            System.out.println("[Catálogo] Evento publicado a RabbitMQ para ID: " + categoriaGuardada.getId());
-        } catch (Exception e) {
-            System.err.println("[Catálogo] Error al enviar evento a RabbitMQ: " + e.getMessage());
-        }
-
-        return categoriaGuardada;
+        return categoriaRepositorio.save(categoria);
     }
 
     public List<Categoria> listarCategorias() {
